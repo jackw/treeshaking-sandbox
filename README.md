@@ -1,46 +1,57 @@
-# Getting Started with Create React App
+# Grafana/Experimental Treeshaking sandbox
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This repo is a testbed for checking the treeshaking abilities of a component library such as grafana/experimental or grafana/ui.
 
-## Available Scripts
+Based on the create-react-app typescript template with craco added to resolve bundling issues with node polyfills and various nested dependencies of the grafana packages. Adds a `yarn analyze` script using source-map-explorer to better understand what is being bundled.
 
-In the project directory, you can run:
+## Initial run (`@grafana/experimental@1.1.0`)
 
-### `yarn start`
+After a clean install of `yarn create react-app experimental-treeshake --template typescript` and `yarn build` we get:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```shell
+File sizes after gzip:
+  43.76 kB  build/static/js/main.9ef7c0f1.js
+  1.79 kB   build/static/js/787.d942f317.chunk.js
+  541 B     build/static/css/main.073c9b0a.css
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Adding a simple component from `@grafana/experimental` to the mix:
 
-### `yarn test`
+```typescript
+import { EditorRow } from "@grafana/experimental";
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```shell
+File sizes after gzip:
+  894.38 kB  build/static/js/main.7248e34a.js
+  5.62 kB    build/static/js/react-monaco-editor.18ae632f.chunk.js
+  1.79 kB    build/static/js/787.d942f317.chunk.js
+  541 B      build/static/css/main.073c9b0a.css
+```
 
-### `yarn build`
+After updating the rollup configs to produce an esm build:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```shell
+File sizes after gzip:
+  183.38 kB (-730.77 kB)  build/static/js/main.0fe9360c.js
+  1.79 kB                 build/static/js/787.d942f317.chunk.js
+  541 B                   build/static/css/main.073c9b0a.css
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Introduce `sideEffects: false` to package.json:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```shell
+File sizes after gzip:
+  91.15 kB (-92.23 kB)  build/static/js/main.453b11db.js
+  1.79 kB               build/static/js/787.d942f317.chunk.js
+  541 B                 build/static/css/main.073c9b0a.css
+```
 
-### `yarn eject`
+Publish to local verdaccio npm registry so webpack doesn't bundle multiple copies of react:
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+```shell
+File sizes after gzip:
+  89.5 kB (-1.65 kB)  build/static/js/main.fe00af40.js
+  1.79 kB               build/static/js/787.d942f317.chunk.js
+  541 B                 build/static/css/main.073c9b0a.css
+```
